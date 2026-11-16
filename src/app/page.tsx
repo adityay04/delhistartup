@@ -33,11 +33,11 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center w-full relative bg-[#fcfcfd] dark:bg-[#09090b] text-[#141314] dark:text-[#fafafa] transition-colors duration-500">
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden dark:opacity-20 transition-opacity duration-500">
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
         <img
-          src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg"
-          alt="World Map Background"
-          className="absolute top-1/2 left-1/2 w-[150vw] min-w-[1500px] max-w-none -translate-x-1/2 -translate-y-1/2 blur-[2px] opacity-[0.04] dark:opacity-[0.03] dark:invert transition-all duration-500"
+          src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=2074&auto=format&fit=crop"
+          alt="Rotating Globe Background"
+          className="w-[120vw] max-w-none min-w-[1200px] aspect-square object-cover rounded-full grayscale opacity-[0.15] dark:opacity-[0.1] blur-[2px] animate-spin-slow transition-opacity duration-500"
         />
       </div>
 

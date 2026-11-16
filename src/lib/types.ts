@@ -19,4 +19,7 @@ export interface Entity {
   is_verified: boolean;
   lat: number | null;
   lng: number | null;
+  stage: string | null;
+  founded_year: number | null;
+  open_roles_count?: number;
 }

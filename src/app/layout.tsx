@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Sans, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Preloader } from "@/components/Preloader";
 import "./globals.css";
 
 const instrument = Instrument_Sans({
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${instrument.variable} ${spaceGrotesk.variable} font-sans antialiased bg-[#fcfcfd] dark:bg-[#09090b] text-[#141314] dark:text-[#fafafa] transition-colors duration-500`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Preloader />
           {children}
         </ThemeProvider>
       </body>

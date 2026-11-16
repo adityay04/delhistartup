@@ -4,6 +4,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useMapStore } from "@/store/mapStore";
 import type { Entity } from "@/lib/types";
+import { useTheme } from "next-themes";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -12,12 +13,16 @@ export default function MapView({ entities }: { entities: Entity[] }) {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const { selectedId, select } = useMapStore();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return;
     const map = new mapboxgl.Map({
       container: ref.current,
-      style: "mapbox://styles/mapbox/light-v11",
+      style:
+        resolvedTheme === "dark"
+          ? "mapbox://styles/mapbox/dark-v11"
+          : "mapbox://styles/mapbox/light-v11",
       center: [77.209, 28.6139],
       zoom: 10,
     });
@@ -37,10 +42,11 @@ export default function MapView({ entities }: { entities: Entity[] }) {
         source: "entities",
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#141314",
+          "circle-color": resolvedTheme === "dark" ? "#fafafa" : "#141314",
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 30, 28],
           "circle-stroke-width": 3,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color":
+            resolvedTheme === "dark" ? "#141314" : "#ffffff",
         },
       });
 
@@ -54,7 +60,9 @@ export default function MapView({ entities }: { entities: Entity[] }) {
           "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
           "text-size": 12,
         },
-        paint: { "text-color": "#ffffff" },
+        paint: {
+          "text-color": resolvedTheme === "dark" ? "#141314" : "#ffffff",
+        },
       });
 
       map.addLayer({
@@ -67,14 +75,15 @@ export default function MapView({ entities }: { entities: Entity[] }) {
             "match",
             ["get", "type"],
             "vc",
-            "#141314",
+            resolvedTheme === "dark" ? "#fafafa" : "#141314",
             "startup",
             "#2563eb",
             "#6b7280",
           ],
           "circle-radius": 8,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color":
+            resolvedTheme === "dark" ? "#141314" : "#ffffff",
         },
       });
 
@@ -100,7 +109,7 @@ export default function MapView({ entities }: { entities: Entity[] }) {
       map.remove();
       mapRef.current = null;
     };
-  }, [select]);
+  }, [select, resolvedTheme]);
 
   useEffect(() => {
     if (!mapLoaded) return;

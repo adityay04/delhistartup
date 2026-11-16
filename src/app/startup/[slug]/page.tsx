@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { Entity } from "@/lib/types";
+import { Map, ArrowLeft, Globe, Users } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 
 export const instant = false;
 
@@ -19,9 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq("slug", slug)
     .single();
 
-  if (!entity) {
-    return { title: "Startup Not Found" };
-  }
+  if (!entity) return { title: "Startup Not Found" };
 
   return {
     title: `${entity.name} - Delhi Startup Map`,
@@ -40,100 +40,106 @@ export default async function StartupProfile({ params }: Props) {
     .eq("slug", slug)
     .single();
 
-  if (error || !data) {
-    notFound();
-  }
+  if (error || !data) notFound();
 
   const entity = data as Entity;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] text-[#141314] dark:text-[#fafafa] transition-colors duration-500">
+      <Navbar />
+
+      <div className="max-w-3xl mx-auto px-6 pt-32 pb-24">
         <Link
           href="/map"
-          className="text-sm text-blue-600 hover:underline mb-6 inline-block"
+          className="inline-flex items-center gap-2 text-sm text-[#5c5c5c] dark:text-[#71717a] hover:text-[#111113] dark:hover:text-[#fafafa] mb-8 transition-colors"
         >
-          ← Back to Map
+          <ArrowLeft className="w-4 h-4" /> Back to Map
         </Link>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="flex justify-between items-start mb-4">
+        <div className="bg-white dark:bg-[#141314] rounded-[24px] shadow-sm border border-[#dddddd] dark:border-[#27272a] p-8 md:p-12 transition-colors duration-500">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-4xl md:text-5xl font-display font-medium text-[#111113] dark:text-[#fafafa]">
                 {entity.name}
               </h1>
-              <p className="text-gray-500 mt-2 text-lg">{entity.tagline}</p>
+              <p className="text-[#454545] dark:text-[#a1a1aa] mt-3 text-lg leading-relaxed max-w-xl">
+                {entity.tagline}
+              </p>
             </div>
-            <span className="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-0.5 rounded uppercase tracking-wide">
-              {entity.entity_type}
+            <span className="bg-[#f4f3f4] dark:bg-[#27272a] text-[#454545] dark:text-[#a1a1aa] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full whitespace-nowrap">
+              {entity.entity_type.replace("_", " ")}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mt-8 border-t border-gray-100 pt-6">
-            <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Location
-              </h3>
-              <p className="text-sm text-gray-900">
-                {entity.area ? `${entity.area}, ` : ""}
-                {entity.city}
-              </p>
-              <p className="text-xs text-gray-500 mt-1 capitalize">
-                {entity.pin_precision === "precise"
-                  ? "Exact Office Location"
-                  : "Area-level Location"}
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 pt-8 border-t border-[#dddddd] dark:border-[#27272a] transition-colors duration-500">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Map className="w-4 h-4" /> Location
+                </h3>
+                <p className="text-base font-medium">
+                  {entity.area ? `${entity.area}, ` : ""}
+                  {entity.city}
+                </p>
+                <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] mt-1 capitalize">
+                  {entity.pin_precision === "precise"
+                    ? "Precise Office Location"
+                    : "Area-level Location"}
+                </p>
+              </div>
+
+              {entity.website_url && (
+                <div>
+                  <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Globe className="w-4 h-4" /> Website
+                  </h3>
+                  <a
+                    href={entity.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base font-medium text-[#2563eb] hover:underline"
+                  >
+                    {entity.website_url.replace(/^https?:\/\//, "")}
+                  </a>
+                </div>
+              )}
             </div>
 
-            {entity.website_url && (
-              <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                  Website
-                </h3>
-                <a
-                  href={entity.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  {entity.website_url.replace(/^https?:\/\//, "")}
-                </a>
-              </div>
-            )}
+            <div className="space-y-6">
+              {entity.founders && entity.founders.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Founders
+                  </h3>
+                  <p className="text-base font-medium">
+                    {entity.founders.join(", ")}
+                  </p>
+                </div>
+              )}
 
-            {entity.founders && entity.founders.length > 0 && (
-              <div className="col-span-2">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                  Founders
-                </h3>
-                <p className="text-sm text-gray-900">
-                  {entity.founders.join(", ")}
-                </p>
-              </div>
-            )}
-
-            {entity.partners && entity.partners.length > 0 && (
-              <div className="col-span-2">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                  Partners
-                </h3>
-                <p className="text-sm text-gray-900">
-                  {entity.partners.join(", ")}
-                </p>
-              </div>
-            )}
+              {entity.partners && entity.partners.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Partners
+                  </h3>
+                  <p className="text-base font-medium">
+                    {entity.partners.join(", ")}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {entity.tags && entity.tags.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <div className="mt-12 pt-8 border-t border-[#dddddd] dark:border-[#27272a] transition-colors duration-500">
+              <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-4">
                 Tags
               </h3>
               <div className="flex flex-wrap gap-2">
                 {entity.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-md"
+                    className="bg-[#f4f3f4] dark:bg-[#27272a] text-[#454545] dark:text-[#a1a1aa] text-sm font-medium px-3 py-1 rounded-full transition-colors duration-500"
                   >
                     {tag}
                   </span>

@@ -24,19 +24,19 @@ export default function SubmitPage() {
 
   if (status === "success") {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-md w-full text-center">
+      <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] flex items-center justify-center p-4 transition-colors duration-500">
+        <div className="bg-white dark:bg-[#141314] p-8 rounded-lg shadow-sm border border-[#dddddd] dark:border-[#27272a] max-w-md w-full text-center transition-colors duration-500">
           <div className="text-green-500 text-5xl mb-4">✓</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-display font-bold text-[#141314] dark:text-[#fafafa] mb-2 transition-colors duration-500">
             Submission Received!
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-[#454545] dark:text-[#a1a1aa] mb-6 transition-colors duration-500">
             Thank you for submitting your startup. Our team will review it
             shortly, and it will appear on the map once approved.
           </p>
           <Link
             href="/map"
-            className="bg-amber-500 text-white px-6 py-2 rounded-md font-medium hover:bg-amber-600 transition-colors"
+            className="bg-[#111113] dark:bg-[#fafafa] text-white dark:text-[#09090b] px-6 py-2 rounded-md font-medium hover:bg-black dark:hover:bg-zinc-200 transition-colors"
           >
             Back to Map
           </Link>
@@ -46,20 +46,20 @@ export default function SubmitPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12 px-4">
+    <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] py-12 px-4 transition-colors duration-500">
       <div className="max-w-2xl mx-auto">
         <Link
           href="/map"
-          className="text-sm text-blue-600 hover:underline mb-6 inline-block"
+          className="text-sm text-[#2563eb] hover:underline mb-6 inline-block"
         >
           ← Back to Map
         </Link>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="bg-white dark:bg-[#141314] rounded-lg shadow-sm border border-[#dddddd] dark:border-[#27272a] p-8 transition-colors duration-500">
+          <h1 className="text-2xl font-display font-bold text-[#141314] dark:text-[#fafafa] mb-2 transition-colors duration-500">
             Add Your Startup
           </h1>
-          <p className="text-gray-500 mb-8 text-sm">
+          <p className="text-[#454545] dark:text-[#a1a1aa] mb-8 text-sm transition-colors duration-500">
             Submit your startup to be featured on the Delhi Startup Map.
             Submissions are reviewed manually before appearing on the map.
           </p>
@@ -67,24 +67,24 @@ export default function SubmitPage() {
           <form action={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                   Startup Name *
                 </label>
                 <input
                   name="name"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
                 />
               </div>
 
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                   Type *
                 </label>
                 <select
                   name="entity_type"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
                 >
                   <option value="startup">Startup</option>
                   <option value="vc">VC / Investor</option>
@@ -93,26 +93,26 @@ export default function SubmitPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                 One-line Tagline *
               </label>
               <input
                 name="tagline"
                 required
                 placeholder="e.g. AI-powered logistics for Tier 2 cities"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                   City *
                 </label>
                 <select
                   name="city"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
                 >
                   <option value="Delhi">Delhi</option>
                   <option value="Gurugram">Gurugram</option>
@@ -122,42 +122,42 @@ export default function SubmitPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                   Area / Locality
                 </label>
                 <input
                   name="area"
                   placeholder="e.g. Nehru Place"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                 Founders (comma separated)
               </label>
               <input
                 name="founders"
                 placeholder="e.g. John Doe, Jane Smith"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
                 Website URL
               </label>
               <input
                 name="website_url"
                 type="url"
                 placeholder="https://"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
               />
             </div>
 
             {status === "error" && (
-              <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-900/50 transition-colors duration-500">
                 {errorMessage}
               </div>
             )}
@@ -165,7 +165,7 @@ export default function SubmitPage() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="w-full bg-gray-900 text-white font-medium py-2.5 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="w-full bg-[#111113] dark:bg-[#fafafa] text-white dark:text-[#09090b] font-medium py-2.5 rounded-md hover:bg-black dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
             >
               {status === "loading" ? "Submitting..." : "Submit Startup"}
             </button>
