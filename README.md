@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🗺️ Delhi Startup Map
 
-## Getting Started
+The definitive interactive map and directory of the Delhi NCR startup ecosystem. Discover startups, VCs, angel networks, and open job roles across Delhi, Gurugram, Noida, and Ghaziabad.
 
-First, run the development server:
+## ✨ Features
+
+- **Interactive Geospatial Map**: Explore 500+ startups and VCs with Mapbox clustering and precise/area-level pins.
+- **Grid View**: A beautiful, responsive card layout for browsing startups like a traditional directory.
+- **Smart Filtering**: Search by name, tags (e.g., "Shark Tank", "Y Combinator"), city, or entity type.
+- **SEO-Optimized Profiles**: Dedicated `/startup/[slug]` pages for every company with rich metadata.
+- **Admin Dashboard**: A moderation queue to approve or reject user-submitted startups.
+- **Automated Data Pipelines**: Scripts to ingest new startups from funding news and sync live job postings from ATS platforms.
+- **Modern UI/UX**: Dark/Light mode with smooth transitions, a custom preloader, and a sleek, minimalist design.
+- **Fully Responsive**: Optimized for desktop, tablet, and mobile viewing.
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Turbopack)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL + PostGIS)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Map Engine**: [Mapbox GL JS](https://www.mapbox.com/)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+
+Ensure you have the following installed:
+
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- A [Supabase](https://supabase.com/) account
+- A [Mapbox](https://www.mapbox.com/) account (for the API token)
+
+### 2. Installation
+
+Clone the repository and install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/delhi-startup-map.git
+cd delhi-startup-map
+npm install
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
