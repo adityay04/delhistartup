@@ -12,7 +12,7 @@ An interactive directory of source-checked startups and investors across Delhi N
 - **Modern UI/UX**: Dark/Light mode with smooth transitions, a custom preloader, and a sleek, minimalist design.
 - **Fully Responsive**: Optimized for desktop, tablet, and mobile viewing.
 
-The funding workflow uses AI to extract information from the linked article; the article itself must contain a matching location quote before a listing can be auto-published. Uncertain leads stay private in the admin review queue. A separate public news feed and AI-written news summaries are not implemented. Job syncing supports official ATS APIs but still needs verified company job boards registered. An empty verified-job feed is reported as unknown hiring status, not as “not hiring.”
+The funding workflow uses AI to extract the company's canonical name and location from the linked article. The name must match the feed's candidate name, and the article must contain a matching location quote before a listing can be auto-published. Headline-like names are sent to review. A separate public news feed and AI-written news summaries are not implemented. Job syncing supports official ATS APIs but still needs verified company job boards registered. An empty verified-job feed is reported as unknown hiring status, not as “not hiring.”
 
 ## 🛠️ Tech Stack
 

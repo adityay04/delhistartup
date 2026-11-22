@@ -33,6 +33,32 @@ function getDelhiNcrCity(value) {
   return NCR_CITIES.get(normalizeText(value)) || null;
 }
 
+function validateCompanyName({
+  articleText,
+  candidateName,
+  canonicalName,
+  companyMatches,
+}) {
+  const normalizedCandidate = normalizeText(candidateName);
+  const normalizedCanonical = normalizeText(canonicalName);
+  const candidateIsHeadlineLike =
+    /:\s|\bFY\d{2,4}\b|\b(?:revenue\s+surges|revenue\s+jumps|funding\s+round)\b/i.test(
+      String(candidateName || ""),
+    );
+  if (
+    companyMatches !== true ||
+    candidateIsHeadlineLike ||
+    normalizedCanonical.length < 2 ||
+    normalizedCanonical.length > 80 ||
+    normalizedCandidate !== normalizedCanonical ||
+    !includesPhrase(articleText, canonicalName)
+  ) {
+    return null;
+  }
+
+  return canonicalName.trim().replace(/\s+/g, " ");
+}
+
 function getTrustedSourceUrl(value) {
   if (typeof value !== "string") return null;
 
@@ -130,6 +156,7 @@ export {
   getDelhiNcrCity,
   getTrustedSourceUrl,
   htmlToText,
+  validateCompanyName,
   validateLocationEvidence,
   slugifyCompanyName,
 };

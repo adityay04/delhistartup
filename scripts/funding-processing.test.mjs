@@ -6,6 +6,7 @@ import {
   getDelhiNcrCity,
   getTrustedSourceUrl,
   htmlToText,
+  validateCompanyName,
   validateLocationEvidence,
   slugifyCompanyName,
 } from "./funding-processing.mjs";
@@ -38,6 +39,40 @@ test("extracts readable text and decodes common HTML entities", () => {
     "Varaha is based in Gurugram & India.",
   );
   assert.equal(htmlToText("Invalid &#x110000; entity"), "Invalid entity");
+});
+
+test("rejects a feed headline when it differs from the article's company name", () => {
+  const articleText =
+    "Swish is headquartered in Gurugram and operates across India.";
+  const valid = {
+    articleText,
+    candidateName: "Swish",
+    canonicalName: "Swish",
+    companyMatches: true,
+  };
+
+  assert.equal(validateCompanyName(valid), "Swish");
+  assert.equal(
+    validateCompanyName({
+      ...valid,
+      candidateName: "Swish FY26: Revenue Surges in Gurugram",
+    }),
+    null,
+  );
+  assert.equal(
+    validateCompanyName({
+      articleText:
+        "Swish FY26: Revenue Surges in Gurugram. Swish is headquartered in Gurugram.",
+      candidateName: "Swish FY26: Revenue Surges in Gurugram",
+      canonicalName: "Swish FY26: Revenue Surges in Gurugram",
+      companyMatches: true,
+    }),
+    null,
+  );
+  assert.equal(
+    validateCompanyName({ ...valid, canonicalName: "Unknown Startup" }),
+    null,
+  );
 });
 
 test("requires an exact article quote and an explicit NCR city before approval", () => {
