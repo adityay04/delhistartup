@@ -4,7 +4,13 @@ import type { Entity } from "@/lib/types";
 interface MapState {
   entities: Entity[];
   selectedId: string | null;
-  filters: { city?: string; tag?: string; type?: string; q?: string };
+  filters: {
+    city?: string;
+    tag?: string;
+    type?: string;
+    q?: string;
+    hiringOnly?: boolean;
+  };
   viewMode: "map" | "grid";
   setEntities: (e: Entity[]) => void;
   select: (id: string | null) => void;

@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   ArrowRight,
   Map,
@@ -14,18 +16,58 @@ import { createStaticClient } from "@/lib/supabase/static";
 import { StaticMapLoader } from "@/components/map/StaticMapLoader";
 import { Navbar } from "@/components/Navbar";
 import type { Entity } from "@/lib/types";
+import {
+  ENTITY_SOURCE_MAX_AGE_DAYS,
+  getFreshnessCutoff,
+} from "@/lib/dataFreshness";
 
 export const instant = false;
 
-export default async function LandingPage() {
+export default function LandingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] p-8 text-sm">
+          Loading source-checked listings…
+        </main>
+      }
+    >
+      <LandingPageContent />
+    </Suspense>
+  );
+}
+
+async function LandingPageContent() {
+  await connection();
   const supabase = createStaticClient();
-  const { data } = await supabase
+  const { data, count, error } = await supabase
     .from("entities")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("is_verified", true)
+    .not("source_url", "is", null)
+    .gte(
+      "source_checked_at",
+      getFreshnessCutoff(ENTITY_SOURCE_MAX_AGE_DAYS),
+    )
+    .order("name")
     .limit(50);
 
+  if (error) {
+    return (
+      <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] p-8 text-[#141314] dark:text-[#fafafa]">
+        <h1 className="text-xl font-medium">Directory setup required</h1>
+        <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+          Unable to load source-checked listings: {error.message}
+        </p>
+        <p className="mt-2 text-sm text-[#5c5c5c] dark:text-[#a1a1aa]">
+          Apply the Supabase migration documented in the README, then reload.
+        </p>
+      </main>
+    );
+  }
+
   const entities = (data || []) as Entity[];
+  const verifiedListingCount = count ?? 0;
 
   const investors = entities
     .filter((e) => e.entity_type === "vc" || e.entity_type === "angel_network")
@@ -49,7 +91,7 @@ export default async function LandingPage() {
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 dark:bg-[#141314]/80 backdrop-blur-sm border border-[#dddddd] dark:border-[#27272a] text-sm text-[#454545] dark:text-[#a1a1aa] hover:bg-white dark:hover:bg-[#27272a] transition-colors shadow-sm"
         >
           <span className="flex h-2 w-2 rounded-full bg-[#2563eb]"></span>
-          We just crossed 500+ verified startups
+          Browse {verifiedListingCount} source-checked listings
           <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
@@ -57,11 +99,12 @@ export default async function LandingPage() {
       <section className="relative w-full max-w-[1200px] mx-auto px-6 pt-16 pb-32 flex flex-col items-center text-center">
         <div className="relative z-10 flex flex-col items-center">
           <h1 className="font-display text-[60px] md:text-[80px] leading-[1.05] font-medium tracking-[-0.03em] max-w-[900px]">
-            The definitive map of Delhi's startup ecosystem.
+            The definitive map of Delhi&apos;s startup ecosystem.
           </h1>
           <p className="text-[#454545] dark:text-[#a1a1aa] text-lg md:text-xl max-w-[600px] mt-8 leading-relaxed transition-colors duration-500">
-            Discover 500+ startups, VCs, and angel networks shaping the future
-            of Delhi NCR. Find your next investor, partner, or job.
+            Explore source-checked startups, investors, and angel networks
+            across Delhi NCR. Current openings link back to their original
+            listings.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 mt-10">
             <Link
@@ -78,7 +121,8 @@ export default async function LandingPage() {
             </Link>
           </div>
           <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] mt-8 font-medium transition-colors duration-500">
-            Trusted by 10,000+ founders, investors, and operators.
+            Listing sources are reviewed and dated so you can judge how current
+            the information is.
           </p>
         </div>
       </section>
@@ -100,7 +144,7 @@ export default async function LandingPage() {
             <p>
               Delhi NCR is one of the most vibrant startup hubs in the world,
               but its geography is fragmented across Delhi, Gurugram, and Noida.
-              We built this map to give founders a bird's-eye view of who is
+              We built this map to give founders a bird&apos;s-eye view of who is
               building what, and where.
             </p>
             <p>
@@ -111,19 +155,14 @@ export default async function LandingPage() {
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#dddddd] dark:border-[#27272a] transition-colors duration-500">
               <div>
                 <p className="text-3xl font-display font-medium text-[#111113] dark:text-[#fafafa] transition-colors duration-500">
-                  500+
+                  {verifiedListingCount}
                 </p>
                 <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] transition-colors duration-500">
-                  Startups Listed
+                  Current source-checked listings
                 </p>
               </div>
-              <div>
-                <p className="text-3xl font-display font-medium text-[#111113] dark:text-[#fafafa] transition-colors duration-500">
-                  50+
-                </p>
-                <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] transition-colors duration-500">
-                  Active VCs & Angels
-                </p>
+              <div className="flex items-center text-sm text-[#5c5c5c] dark:text-[#71717a]">
+                Company and job pages link to their source.
               </div>
             </div>
           </div>
@@ -199,9 +238,9 @@ export default async function LandingPage() {
                 Interactive Geospatial Map
               </h3>
               <p className="text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-                Zoom in on specific neighborhoods. Filter by sector, funding
-                stage, or company size. Click any pin to see founders and
-                contact info.
+                Explore verified listings by city or entity type. Pins use
+                known coordinates only; listings without a verified location
+                are not assigned a guessed pin.
               </p>
             </div>
             <div className="flex-1 w-full bg-white dark:bg-[#09090b] rounded-xl border border-[#dddddd] dark:border-[#27272a] h-[300px] relative overflow-hidden shadow-sm transition-colors duration-500">
@@ -215,16 +254,16 @@ export default async function LandingPage() {
               Advanced Filtering
             </h3>
             <p className="text-sm text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-              Search by name, tags, founders, or specific tags like "Shark Tank"
-              or "YC-backed".
+              Search by company name or tags, and filter by city or entity
+              type.
             </p>
           </div>
           <div className="bg-[#f4f3f4] dark:bg-[#141314] rounded-[16px] p-8 space-y-3 shadow-sm border border-[#dddddd]/50 dark:border-[#27272a]/50 transition-colors duration-500">
             <Shield className="w-6 h-6 mb-4" />
             <h3 className="text-xl font-display font-medium">Verified Data</h3>
             <p className="text-sm text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-              Every listing is reviewed by our team. Say goodbye to outdated
-              directories.
+              Public listings include a source reviewed within the last 90
+              days. Older or unsourced records stay off the public map.
             </p>
           </div>
           <div className="bg-[#f4f3f4] dark:bg-[#141314] rounded-[16px] p-8 space-y-3 shadow-sm border border-[#dddddd]/50 dark:border-[#27272a]/50 transition-colors duration-500">
@@ -233,8 +272,8 @@ export default async function LandingPage() {
               Instant Updates
             </h3>
             <p className="text-sm text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-              Founders can submit their own startups. Profiles go live after a
-              quick approval.
+              Submissions include a source link and are published only after
+              review.
             </p>
           </div>
         </div>
@@ -289,7 +328,7 @@ export default async function LandingPage() {
                 <div>
                   <h4 className="font-medium text-lg">For the Ecosystem</h4>
                   <p className="text-[#454545] dark:text-[#a1a1aa] mt-1 transition-colors duration-500">
-                    Get a macro-level view of how the capital region's startup
+                    Get a macro-level view of how the capital region&apos;s startup
                     landscape is evolving.
                   </p>
                 </div>
@@ -300,56 +339,6 @@ export default async function LandingPage() {
           <div className="w-full h-[500px] bg-white dark:bg-[#09090b] rounded-[16px] border border-[#dddddd] dark:border-[#27272a] relative overflow-hidden shadow-sm transition-colors duration-500">
             <StaticMapLoader entities={entities} />
           </div>
-        </div>
-      </section>
-
-      <section className="w-full max-w-[1200px] mx-auto px-6 py-24 border-t border-[#dddddd] dark:border-[#27272a] relative z-10 transition-colors duration-500">
-        <h2 className="text-3xl md:text-5xl font-display font-medium tracking-tight mb-16">
-          Loved by the ecosystem.
-        </h2>
-        <div className="space-y-12">
-          {[
-            {
-              quote:
-                "This is exactly what Delhi needed. We used it to find our first angel investor in Gurugram.",
-              name: "Rahul Sharma",
-              role: "Founder, TechNova",
-            },
-            {
-              quote:
-                "As a VC, seeing the geographic density of startups helps us understand where the next cluster is forming.",
-              name: "Priya Singh",
-              role: "Partner, Capital Ventures",
-            },
-            {
-              quote:
-                "I found my current job at a startup just 2km from my house. The map is a game-changer for talent.",
-              name: "Amit Kumar",
-              role: "Software Engineer",
-            },
-          ].map((t, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start bg-white/60 dark:bg-[#141314]/60 backdrop-blur-sm p-8 rounded-2xl border border-[#dddddd] dark:border-[#27272a] transition-colors duration-500"
-            >
-              <div className="md:col-span-3">
-                <p className="text-2xl md:text-3xl font-display leading-snug">
-                  "{t.quote}"
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#f4f3f4] dark:bg-[#27272a] border border-[#dddddd] dark:border-[#3f3f46] flex items-center justify-center font-medium transition-colors duration-500">
-                  {t.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] transition-colors duration-500">
-                    {t.role}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -369,11 +358,11 @@ export default async function LandingPage() {
             },
             {
               q: "What areas are covered?",
-              a: "We cover the entire Delhi NCR region, including Delhi, Gurugram, Noida, and Ghaziabad.",
+              a: "We cover Delhi NCR, including Delhi, Gurugram, Noida, Ghaziabad, and Faridabad.",
             },
             {
               q: "How often is the data updated?",
-              a: "We review submissions daily. New approved startups appear on the map immediately.",
+              a: "Listings are visible after review and a source check. We do not yet run an automated jobs provider.",
             },
             {
               q: "Can investors use this map?",
@@ -381,7 +370,7 @@ export default async function LandingPage() {
             },
             {
               q: "Is my location precise?",
-              a: "We use area-level pins for most startups unless the founder provides an exact office address.",
+              a: "We only plot listings with known coordinates. Submissions without a verified location are not given a guessed pin.",
             },
           ].map((faq, i) => (
             <div key={i} className="space-y-3">
@@ -397,33 +386,18 @@ export default async function LandingPage() {
       <section className="w-full max-w-[1200px] mx-auto px-6 py-24 relative z-10">
         <div className="bg-[#f4f3f4] dark:bg-[#141314] rounded-[16px] p-12 md:p-24 text-center shadow-sm border border-[#dddddd]/50 dark:border-[#27272a]/50 transition-colors duration-500">
           <h2 className="text-3xl md:text-5xl font-display font-medium tracking-tight mb-4">
-            Never miss a new startup.
+            See the source behind each listing.
           </h2>
           <p className="text-[#454545] dark:text-[#a1a1aa] text-lg mb-8 max-w-xl mx-auto transition-colors duration-500">
-            Get a weekly digest of the newest startups, funding rounds, and
-            ecosystem news in Delhi NCR.
+            Company profiles show where their information came from and when
+            it was last checked. Job links point to the original opening.
           </p>
-
-          <form className="flex flex-col sm:flex-row max-w-md mx-auto gap-3">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-5 py-3 rounded-full border border-[#dddddd] dark:border-[#3f3f46] focus:outline-none focus:border-[#111113] dark:focus:border-[#fafafa] bg-white dark:bg-[#09090b] transition-colors duration-500"
-              required
-            />
-            <button
-              type="button"
-              className="bg-[#111113] dark:bg-[#fafafa] text-white dark:text-[#09090b] px-8 py-3 rounded-full font-medium hover:bg-black dark:hover:bg-zinc-200 transition-colors"
-            >
-              Subscribe
-            </button>
-          </form>
-          <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] mt-4 transition-colors duration-500">
-            No spam. Unsubscribe anytime.
-          </p>
-          <p className="text-xs text-[#5c5c5c] dark:text-[#71717a] mt-1 transition-colors duration-500">
-            Join 5,000+ subscribers.
-          </p>
+          <Link
+            href="/map"
+            className="inline-flex bg-[#111113] dark:bg-[#fafafa] text-white dark:text-[#09090b] px-8 py-3 rounded-full font-medium hover:bg-black dark:hover:bg-zinc-200 transition-colors"
+          >
+            Browse current listings
+          </Link>
         </div>
       </section>
 

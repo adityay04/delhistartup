@@ -67,12 +67,12 @@ export function GridView({ entities }: { entities: Entity[] }) {
           <div className="flex items-center justify-between pt-4 border-t border-[#dddddd] dark:border-[#27272a]">
             {entity.open_roles_count ? (
               <span className="text-sm font-medium text-[#2563eb]">
-                {entity.open_roles_count} open role
+                {entity.open_roles_count} current role
                 {entity.open_roles_count > 1 ? "s" : ""}
               </span>
             ) : (
               <span className="text-sm text-[#5c5c5c] dark:text-[#71717a]">
-                No open roles
+                Hiring status unverified
               </span>
             )}
             <Link

@@ -156,6 +156,22 @@ export default function SubmitPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-[#454545] dark:text-[#a1a1aa] mb-1 transition-colors duration-500">
+                Source URL for verifying this listing *
+              </label>
+              <input
+                name="source_url"
+                type="url"
+                placeholder="https://"
+                required
+                className="w-full px-3 py-2 bg-white dark:bg-[#09090b] border border-[#dddddd] dark:border-[#27272a] rounded-md text-sm focus:ring-2 focus:ring-[#2563eb] outline-none transition-colors duration-500"
+              />
+              <p className="text-xs text-[#5c5c5c] dark:text-[#71717a] mt-1">
+                Link to an official company page or another reliable source.
+              </p>
+            </div>
+
             {status === "error" && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-900/50 transition-colors duration-500">
                 {errorMessage}

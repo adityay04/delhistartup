@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { MapLoader } from "@/components/map/MapLoader";
@@ -9,6 +9,15 @@ import { useMapStore } from "@/store/mapStore";
 import type { Entity } from "@/lib/types";
 import { Map, Sun, Moon, LayoutGrid } from "lucide-react";
 import { useTheme } from "next-themes";
+import {
+  ENTITY_SOURCE_MAX_AGE_DAYS,
+  JOB_POSTING_MAX_AGE_DAYS,
+  getFreshnessCutoff,
+} from "@/lib/dataFreshness";
+
+const subscribeToHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function MapPage() {
   const {
@@ -23,30 +32,76 @@ export default function MapPage() {
   } = useMapStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
-    setMounted(true);
     const supabase = createClient();
-    supabase
-      .from("entities")
-      .select("*")
-      .order("name")
-      .then(({ data, error }) => {
-        if (error) {
-          setError(error.message);
-        } else {
-          setEntities(data as Entity[]);
+    const now = new Date().toISOString();
+    Promise.all([
+      supabase
+        .from("entities")
+        .select("*")
+        .eq("is_verified", true)
+        .not("source_url", "is", null)
+        .gte(
+          "source_checked_at",
+          getFreshnessCutoff(ENTITY_SOURCE_MAX_AGE_DAYS),
+        )
+        .order("name"),
+      supabase
+        .from("job_postings")
+        .select("entity_id")
+        .eq("is_active", true)
+        .gte(
+          "last_checked_at",
+          getFreshnessCutoff(JOB_POSTING_MAX_AGE_DAYS),
+        )
+        .gt("expires_at", now),
+    ])
+      .then(([entityResult, jobResult]) => {
+        if (entityResult.error) {
+          setError(entityResult.error.message);
+          return;
         }
-        setLoading(false);
-      });
+        if (jobResult.error) {
+          setError(jobResult.error.message);
+          return;
+        }
+
+        const roleCounts = new globalThis.Map<string, number>();
+        for (const job of jobResult.data) {
+          roleCounts.set(
+            job.entity_id,
+            (roleCounts.get(job.entity_id) ?? 0) + 1,
+          );
+        }
+        setEntities(
+          (entityResult.data as Entity[]).map((entity) => ({
+            ...entity,
+            open_roles_count: roleCounts.get(entity.id) ?? 0,
+          })),
+        );
+      })
+      .catch((fetchError: unknown) => {
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Unable to load current listings.",
+        );
+      })
+      .finally(() => setLoading(false));
   }, [setEntities]);
 
   const filteredEntities = useMemo(() => {
     return entities.filter((e) => {
       if (filters.city && e.city !== filters.city) return false;
       if (filters.type && e.entity_type !== filters.type) return false;
+      if (filters.hiringOnly && !e.open_roles_count) return false;
       if (filters.q) {
         const query = filters.q.toLowerCase();
         const matchName = e.name.toLowerCase().includes(query);
@@ -133,6 +188,7 @@ export default function MapPage() {
               <option value="Gurugram">Gurugram</option>
               <option value="Noida">Noida</option>
               <option value="Ghaziabad">Ghaziabad</option>
+              <option value="Faridabad">Faridabad</option>
             </select>
 
             <select
@@ -154,7 +210,22 @@ export default function MapPage() {
               {loading ? "Loading…" : `${filteredEntities.length} listings`}
             </div>
 
-            <div className="flex bg-[#f4f3f4] dark:bg-[#141314] p-1 rounded-full border border-transparent dark:border-[#27272a]">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-pressed={filters.hiringOnly || false}
+                onClick={() =>
+                  setFilters({ hiringOnly: !filters.hiringOnly })
+                }
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  filters.hiringOnly
+                    ? "bg-[#111113] dark:bg-[#fafafa] text-white dark:text-[#09090b] border-transparent"
+                    : "border-[#dddddd] dark:border-[#27272a] text-[#5c5c5c] dark:text-[#a1a1aa]"
+                }`}
+              >
+                Hiring
+              </button>
+              <div className="flex bg-[#f4f3f4] dark:bg-[#141314] p-1 rounded-full border border-transparent dark:border-[#27272a]">
               <button
                 onClick={() => setViewMode("map")}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -175,6 +246,7 @@ export default function MapPage() {
               >
                 <LayoutGrid className="w-3.5 h-3.5" /> Grid
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -206,6 +278,12 @@ export default function MapPage() {
                 <div className="text-[#454545] dark:text-[#a1a1aa] text-sm mb-3">
                   {e.area ? `${e.area}, ` : ""}
                   {e.city} · {e.entity_type === "vc" ? "VC" : "Startup"}
+                </div>
+
+                <div className="text-xs text-[#2563eb] mb-2">
+                  {e.open_roles_count
+                    ? `${e.open_roles_count} current role${e.open_roles_count === 1 ? "" : "s"}`
+                    : "Hiring status unverified"}
                 </div>
 
                 {e.tags.length > 0 && (

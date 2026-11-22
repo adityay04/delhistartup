@@ -2,9 +2,16 @@ import { createStaticClient } from "@/lib/supabase/static";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import type { Entity } from "@/lib/types";
+import type { Entity, JobPosting } from "@/lib/types";
 import { Map, ArrowLeft, Globe, Users } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Suspense } from "react";
+import { connection } from "next/server";
+import {
+  ENTITY_SOURCE_MAX_AGE_DAYS,
+  JOB_POSTING_MAX_AGE_DAYS,
+  getFreshnessCutoff,
+} from "@/lib/dataFreshness";
 
 export const instant = false;
 
@@ -13,13 +20,24 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection();
   const { slug } = await params;
   const supabase = createStaticClient();
-  const { data: entity } = await supabase
+  const { data: entity, error } = await supabase
     .from("entities")
     .select("name, tagline, city")
     .eq("slug", slug)
+    .eq("is_verified", true)
+    .not("source_url", "is", null)
+    .gte(
+      "source_checked_at",
+      getFreshnessCutoff(ENTITY_SOURCE_MAX_AGE_DAYS),
+    )
     .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Unable to load startup metadata: ${error.message}`);
+  }
 
   if (!entity) return { title: "Startup Not Found" };
 
@@ -30,7 +48,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function StartupProfile({ params }: Props) {
+export default function StartupProfile({ params }: Props) {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] p-8 text-sm">
+          Loading source-checked profile…
+        </main>
+      }
+    >
+      <StartupProfileContent params={params} />
+    </Suspense>
+  );
+}
+
+async function StartupProfileContent({ params }: Props) {
+  await connection();
   const { slug } = await params;
   const supabase = createStaticClient();
 
@@ -38,11 +71,42 @@ export default async function StartupProfile({ params }: Props) {
     .from("entities")
     .select("*")
     .eq("slug", slug)
+    .eq("is_verified", true)
+    .not("source_url", "is", null)
+    .gte(
+      "source_checked_at",
+      getFreshnessCutoff(ENTITY_SOURCE_MAX_AGE_DAYS),
+    )
     .single();
 
-  if (error || !data) notFound();
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Unable to load startup profile: ${error.message}`);
+  }
+  if (!data) notFound();
 
   const entity = data as Entity;
+  const sourceUrl = entity.source_url;
+  const sourceCheckedAt = entity.source_checked_at;
+  if (!sourceUrl || !sourceCheckedAt) notFound();
+
+  const now = new Date().toISOString();
+  const { data: jobData, error: jobsError } = await supabase
+    .from("job_postings")
+    .select("*")
+    .eq("entity_id", entity.id)
+    .eq("is_active", true)
+    .gte(
+      "last_checked_at",
+      getFreshnessCutoff(JOB_POSTING_MAX_AGE_DAYS),
+    )
+    .gt("expires_at", now)
+    .order("last_checked_at", { ascending: false });
+
+  if (jobsError) {
+    throw new Error(`Unable to load current job postings: ${jobsError.message}`);
+  }
+
+  const jobPostings = (jobData || []) as JobPosting[];
 
   return (
     <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] text-[#141314] dark:text-[#fafafa] transition-colors duration-500">
@@ -103,6 +167,26 @@ export default async function StartupProfile({ params }: Props) {
                   </a>
                 </div>
               )}
+
+              <div>
+                <h3 className="text-xs font-bold text-[#5c5c5c] dark:text-[#71717a] uppercase tracking-wider mb-2">
+                  Listing source
+                </h3>
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base font-medium text-[#2563eb] hover:underline break-all"
+                >
+                  {sourceUrl}
+                </a>
+                <p className="text-sm text-[#5c5c5c] dark:text-[#71717a] mt-1">
+                  Source checked{" "}
+                  {new Intl.DateTimeFormat("en-IN", {
+                    dateStyle: "medium",
+                  }).format(new Date(sourceCheckedAt))}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -147,6 +231,47 @@ export default async function StartupProfile({ params }: Props) {
               </div>
             </div>
           )}
+
+          <div className="mt-12 pt-8 border-t border-[#dddddd] dark:border-[#27272a]">
+            <h2 className="text-xl font-display font-medium mb-4">
+              Current openings
+            </h2>
+            {jobPostings.length === 0 ? (
+              <p className="text-sm text-[#5c5c5c] dark:text-[#71717a]">
+                No recently checked job listings are available. Check the
+                company&apos;s website for current openings.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {jobPostings.map((job) => (
+                  <li
+                    key={job.id}
+                    className="rounded-xl border border-[#dddddd] dark:border-[#27272a] p-4"
+                  >
+                    <a
+                      href={job.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[#2563eb] hover:underline"
+                    >
+                      {job.title}
+                    </a>
+                    <p className="text-sm text-[#454545] dark:text-[#a1a1aa] mt-1">
+                      {[job.location, job.employment_type]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    <p className="text-xs text-[#5c5c5c] dark:text-[#71717a] mt-2">
+                      Checked{" "}
+                      {new Intl.DateTimeFormat("en-IN", {
+                        dateStyle: "medium",
+                      }).format(new Date(job.last_checked_at))}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </main>

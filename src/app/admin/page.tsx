@@ -1,131 +1,87 @@
-"use client";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import type { Entity, FundingLead } from "@/lib/types";
+import { ENTITY_SOURCE_MAX_AGE_DAYS, getFreshnessCutoff } from "@/lib/dataFreshness";
+import AdminDashboard from "./AdminDashboard";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { approveEntity, deleteEntity } from "@/app/actions";
-import type { Entity } from "@/lib/types";
+export const instant = false;
 
 export default function AdminPage() {
-  const [entities, setEntities] = useState<Entity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionId, setActionId] = useState<string | null>(null);
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] p-8 text-sm text-[#454545] dark:text-[#a1a1aa]">
+          Loading source review…
+        </main>
+      }
+    >
+      <AdminPageContent />
+    </Suspense>
+  );
+}
 
-  async function fetchUnverified() {
-    setLoading(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("entities")
-      .select("*")
-      .eq("is_verified", false)
-      .order("created_at", { ascending: false });
+async function AdminPageContent() {
+  await connection();
 
-    setEntities((data as Entity[]) || []);
-    setLoading(false);
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!adminEmail) redirect("/admin/login?error=config");
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || user?.email?.toLowerCase() !== adminEmail) {
+    redirect("/admin/login");
   }
 
-  useEffect(() => {
-    fetchUnverified();
-  }, []);
+  const sourceCutoff = getFreshnessCutoff(ENTITY_SOURCE_MAX_AGE_DAYS);
+  const { data, error } = await supabase
+    .from("entities")
+    .select("*")
+    .or(
+      `is_verified.eq.false,source_url.is.null,source_checked_at.is.null,source_checked_at.lt.${sourceCutoff},lat.is.null,lng.is.null`,
+    )
+    .order("created_at", { ascending: false });
 
-  async function handleApprove(id: string) {
-    setActionId(id);
-    const res = await approveEntity(id);
-
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      setEntities((prev) => prev.filter((e) => e.id !== id));
-    }
-    setActionId(null);
+  if (error) {
+    throw new Error(`Unable to load listings that need source review: ${error.message}`);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this submission?")) return;
-    setActionId(id);
-    const res = await deleteEntity(id);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Server-side funding lead access is not configured.");
+  }
 
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      setEntities((prev) => prev.filter((e) => e.id !== id));
-    }
-    setActionId(null);
+  const adminDatabase = createServiceClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const {
+    data: fundingLeadData,
+    error: fundingLeadError,
+  } = await adminDatabase
+    .from("funding_leads")
+    .select(
+      "lead_key,company_name,headline,source_url,source_name,source_published_at,review_reason",
+    )
+    .eq("status", "needs_review")
+    .order("source_published_at", { ascending: false, nullsFirst: false })
+    .limit(25);
+  if (fundingLeadError) {
+    throw new Error(
+      `Unable to load funding leads needing review: ${fundingLeadError.message}`,
+    );
   }
 
   return (
-    <main className="min-h-screen bg-[#fcfcfd] dark:bg-[#09090b] text-[#141314] dark:text-[#fafafa] p-8 transition-colors duration-500">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-display font-bold">Admin Dashboard</h1>
-            <p className="text-[#454545] dark:text-[#a1a1aa] mt-1 transition-colors duration-500">
-              Moderate new startup submissions.
-            </p>
-          </div>
-          <Link href="/map" className="text-sm text-[#2563eb] hover:underline">
-            ← Back to Map
-          </Link>
-        </div>
-
-        {loading ? (
-          <p className="text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-            Loading pending submissions...
-          </p>
-        ) : entities.length === 0 ? (
-          <div className="bg-white dark:bg-[#141314] p-8 rounded-lg border border-[#dddddd] dark:border-[#27272a] text-center transition-colors duration-500">
-            <p className="text-[#454545] dark:text-[#a1a1aa] transition-colors duration-500">
-              No pending submissions. You're all caught up!
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-[#141314] rounded-lg shadow-sm border border-[#dddddd] dark:border-[#27272a] overflow-hidden transition-colors duration-500">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#f4f3f4] dark:bg-[#27272a] border-b border-[#dddddd] dark:border-[#3f3f46] text-[#454545] dark:text-[#a1a1aa] font-semibold transition-colors duration-500">
-                <tr>
-                  <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Tagline</th>
-                  <th className="px-6 py-4">Location</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#dddddd] dark:divide-[#27272a] transition-colors duration-500">
-                {entities.map((e) => (
-                  <tr
-                    key={e.id}
-                    className="hover:bg-[#f4f3f4] dark:hover:bg-[#27272a] transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 font-medium">{e.name}</td>
-                    <td className="px-6 py-4 text-[#454545] dark:text-[#a1a1aa]">
-                      {e.tagline}
-                    </td>
-                    <td className="px-6 py-4">
-                      {e.area ? `${e.area}, ` : ""}
-                      {e.city}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-3">
-                      <button
-                        onClick={() => handleApprove(e.id)}
-                        disabled={actionId === e.id}
-                        className="text-green-600 dark:text-green-400 font-medium hover:underline disabled:opacity-50"
-                      >
-                        {actionId === e.id ? "..." : "Approve"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(e.id)}
-                        disabled={actionId === e.id}
-                        className="text-red-600 dark:text-red-400 font-medium hover:underline disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </main>
+    <AdminDashboard
+      entities={(data || []) as Entity[]}
+      fundingLeads={(fundingLeadData || []) as FundingLead[]}
+    />
   );
 }
